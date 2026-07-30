@@ -132,10 +132,16 @@
     height:200px;
     image-rendering:pixelated;
     image-rendering:crisp-edges;
-    cursor:default;
-  }
-  .sprite-wrap.unlocked canvas#sprite{
     cursor:pointer;
+  }
+
+  .yt-hidden{
+    position:absolute;
+    width:1px;
+    height:1px;
+    overflow:hidden;
+    opacity:0;
+    pointer-events:none;
   }
 
   .countdown{
@@ -216,11 +222,50 @@
   <p class="status" id="status">the present is smoking a little more every hour&hellip;</p>
   <p class="celebrate pixel-font" id="celebrate">happy birthday!</p>
   <p class="celebrate-sub" id="celebrateSub">it's a blunt now. enjoy responsibly.</p>
+
+  <div id="bangPlayer" class="yt-hidden"></div>
+  <div id="chorusPlayer" class="yt-hidden"></div>
 </div>
 
+<script src="https://www.youtube.com/iframe_api"></script>
 <script>
 (function(){
   "use strict";
+
+  // ---------- sound clips (YouTube embeds) ----------
+  var BANG_ID = 'zhxAA_7jlXw', BANG_START = 17, BANG_END = 25;
+  var CHORUS_ID = 'D-ss9QOSHsA', CHORUS_START = 29, CHORUS_END = 60;
+  var bangPlayer = null, chorusPlayer = null;
+
+  function makeClipPlayer(elId, videoId, start, end){
+    return new YT.Player(elId, {
+      videoId: videoId,
+      playerVars:{
+        start:start, end:end, controls:0, disablekb:1,
+        modestbranding:1, playsinline:1, rel:0, enablejsapi:1
+      },
+      events:{
+        onError:function(){
+          window.open('https://www.youtube.com/watch?v=' + videoId + '&t=' + start + 's', '_blank', 'noopener');
+        }
+      }
+    });
+  }
+
+  window.onYouTubeIframeAPIReady = function(){
+    bangPlayer = makeClipPlayer('bangPlayer', BANG_ID, BANG_START, BANG_END);
+    chorusPlayer = makeClipPlayer('chorusPlayer', CHORUS_ID, CHORUS_START, CHORUS_END);
+  };
+
+  function playClip(player, start, end){
+    if (!player || typeof player.seekTo !== 'function') return;
+    player.seekTo(start, true);
+    player.playVideo();
+    clearTimeout(player._stopTimer);
+    player._stopTimer = setTimeout(function(){
+      if (typeof player.pauseVideo === 'function') player.pauseVideo();
+    }, (end - start) * 1000 + 300);
+  }
 
   // ---------- target time ----------
   // August 3, 2026, 5:00 PM US Eastern (EDT, UTC-4)
@@ -390,13 +435,18 @@
   var countdownEl = document.getElementById('countdown');
 
   canvas.addEventListener('click', function(){
-    if (unlocked && !opened){
+    if (!unlocked){
+      playClip(bangPlayer, BANG_START, BANG_END);
+      return;
+    }
+    if (!opened){
       opened = true;
       spriteWrap.classList.remove('unlocked');
       burstConfetti();
       statusEl.textContent = '';
       celebrateEl.classList.add('show');
       celebrateSubEl.classList.add('show');
+      playClip(chorusPlayer, CHORUS_START, CHORUS_END);
     }
   });
 
