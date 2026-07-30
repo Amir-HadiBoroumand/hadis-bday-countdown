@@ -1,0 +1,470 @@
+<title>Hadi's Bday Countdown</title>
+<style>
+  :root{
+    --bg-deep:#0b0e1a;
+    --bg-panel:#141a2e;
+    --panel-line:#2a3252;
+    --ink:#eef0f6;
+    --ink-dim:#9aa3c0;
+    --accent:#ff5470;
+    --accent-2:#ffd166;
+    --smoke-rgb:201,203,214;
+    --star-rgb:255,255,255;
+  }
+  :root[data-theme="light"]{
+    --bg-deep:#f2ecdd;
+    --bg-panel:#fffaf0;
+    --panel-line:#2a1f14;
+    --ink:#241a10;
+    --ink-dim:#6b5c47;
+    --accent:#d6335a;
+    --accent-2:#c8871c;
+    --smoke-rgb:120,112,98;
+    --star-rgb:40,30,20;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg-deep:#f2ecdd;
+      --bg-panel:#fffaf0;
+      --panel-line:#2a1f14;
+      --ink:#241a10;
+      --ink-dim:#6b5c47;
+      --accent:#d6335a;
+      --accent-2:#c8871c;
+      --smoke-rgb:120,112,98;
+      --star-rgb:40,30,20;
+    }
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px 18px;
+    background:
+      radial-gradient(1px 1px at 10% 20%, rgba(var(--star-rgb),.5) 0, transparent 60%),
+      radial-gradient(1px 1px at 80% 15%, rgba(var(--star-rgb),.4) 0, transparent 60%),
+      radial-gradient(1.5px 1.5px at 60% 70%, rgba(var(--star-rgb),.5) 0, transparent 60%),
+      radial-gradient(1px 1px at 30% 85%, rgba(var(--star-rgb),.35) 0, transparent 60%),
+      radial-gradient(1px 1px at 92% 60%, rgba(var(--star-rgb),.4) 0, transparent 60%),
+      radial-gradient(1px 1px at 45% 40%, rgba(var(--star-rgb),.3) 0, transparent 60%),
+      var(--bg-deep);
+    background-color:var(--bg-deep);
+    color:var(--ink);
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .pixel-font{
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", "Consolas", Menlo, monospace;
+    font-weight:800;
+    text-transform:uppercase;
+  }
+
+  .card{
+    width:100%;
+    max-width:420px;
+    background:var(--bg-panel);
+    border:3px solid var(--panel-line);
+    box-shadow:
+      0 0 0 3px var(--bg-deep),
+      0 0 0 6px var(--panel-line),
+      0 18px 50px rgba(0,0,0,.45);
+    padding:26px 24px 30px;
+    text-align:center;
+    position:relative;
+  }
+
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:.18em;
+    color:var(--accent-2);
+    margin:0 0 6px;
+  }
+  h1{
+    font-size:22px;
+    letter-spacing:.03em;
+    margin:0 0 4px;
+    text-shadow:
+      2px 0 0 var(--accent),
+      0 2px 0 var(--accent);
+  }
+  :root[data-theme="light"] h1, @media (prefers-color-scheme:light){ h1{ text-shadow:2px 0 0 var(--accent), 0 2px 0 var(--accent);} }
+  .subtitle{
+    font-size:13px;
+    color:var(--ink-dim);
+    margin:0 0 20px;
+  }
+
+  .sprite-wrap{
+    position:relative;
+    width:220px;
+    height:220px;
+    margin:0 auto 18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .glow{
+    position:absolute;
+    inset:-20px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(255,84,112,.28), transparent 70%);
+    opacity:.5;
+    filter:blur(2px);
+    transition:opacity .4s ease;
+  }
+  .sprite-wrap.unlocked .glow{
+    opacity:1;
+    animation:pulseGlow 1.4s ease-in-out infinite;
+  }
+  @keyframes pulseGlow{
+    0%,100%{ transform:scale(1); opacity:.7; }
+    50%{ transform:scale(1.12); opacity:1; }
+  }
+  canvas#sprite{
+    position:relative;
+    width:200px;
+    height:200px;
+    image-rendering:pixelated;
+    image-rendering:crisp-edges;
+    cursor:default;
+  }
+  .sprite-wrap.unlocked canvas#sprite{
+    cursor:pointer;
+  }
+
+  .countdown{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:8px;
+    margin-bottom:16px;
+  }
+  .unit{
+    background:var(--bg-deep);
+    border:2px solid var(--panel-line);
+    padding:10px 4px 8px;
+  }
+  .unit .num{
+    font-size:26px;
+    font-variant-numeric:tabular-nums;
+    line-height:1;
+  }
+  .unit .lbl{
+    font-size:9px;
+    letter-spacing:.12em;
+    color:var(--ink-dim);
+    margin-top:6px;
+  }
+
+  .status{
+    font-size:13px;
+    color:var(--ink-dim);
+    min-height:18px;
+    margin:0 0 4px;
+  }
+  .status.ready{
+    color:var(--accent-2);
+    animation:blink 1.6s steps(2,jump-none) infinite;
+  }
+  @keyframes blink{ 50%{ opacity:.35; } }
+
+  .celebrate{
+    display:none;
+    font-size:19px;
+    letter-spacing:.02em;
+    margin:2px 0 2px;
+    text-shadow:2px 0 0 var(--accent-2), 0 2px 0 var(--accent-2);
+  }
+  .celebrate.show{ display:block; }
+  .celebrate-sub{
+    display:none;
+    font-size:12px;
+    color:var(--ink-dim);
+  }
+  .celebrate-sub.show{ display:block; }
+
+  .countdown.hide{ display:none; }
+
+  @media (prefers-reduced-motion: reduce){
+    .sprite-wrap.unlocked .glow{ animation:none; }
+    .status.ready{ animation:none; }
+  }
+</style>
+
+<div class="card">
+  <p class="eyebrow pixel-font">hadi's bday countdown</p>
+  <h1 class="pixel-font">smoke's rising</h1>
+  <p class="subtitle" id="targetLabel">counting down to August 3 · 4:20 PM ET</p>
+
+  <div class="sprite-wrap" id="spriteWrap">
+    <div class="glow"></div>
+    <canvas id="sprite" width="160" height="160"></canvas>
+  </div>
+
+  <div class="countdown pixel-font" id="countdown">
+    <div class="unit"><div class="num" id="dd">--</div><div class="lbl">days</div></div>
+    <div class="unit"><div class="num" id="hh">--</div><div class="lbl">hrs</div></div>
+    <div class="unit"><div class="num" id="mm">--</div><div class="lbl">min</div></div>
+    <div class="unit"><div class="num" id="ss">--</div><div class="lbl">sec</div></div>
+  </div>
+
+  <p class="status" id="status">the present is smoking a little more every hour&hellip;</p>
+  <p class="celebrate pixel-font" id="celebrate">happy birthday!</p>
+  <p class="celebrate-sub" id="celebrateSub">it's a blunt now. enjoy responsibly.</p>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- target time ----------
+  // August 3, 2026, 5:00 PM US Eastern (EDT, UTC-4)
+  var TARGET = new Date('2026-08-03T16:20:00-04:00').getTime();
+  var remainingAtLoad = TARGET - Date.now();
+  if (remainingAtLoad <= 0) remainingAtLoad = 1;
+
+  try{
+    var fmt = new Intl.DateTimeFormat('en-US', {
+      weekday:'long', month:'long', day:'numeric',
+      hour:'numeric', minute:'2-digit', timeZone:'America/New_York', timeZoneName:'short'
+    });
+    document.getElementById('targetLabel').textContent = fmt.format(new Date(TARGET));
+  }catch(e){ /* keep default label */ }
+
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- pixel sprite ----------
+  var UNIT = 10; // internal px per grid cell (16x16 grid -> 160x160 canvas)
+  var canvas = document.getElementById('sprite');
+  var ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  var COLORS = {
+    K:'#241019', L:'#ff8fa3', B:'#ff5470', S:'#c93958',
+    R:'#ffd166', r:'#e0a83a',
+    paper:'#e9dcb3', paperShade:'#c8b788',
+    ember:'#ff6a2b', emberCore:'#ffe066', ash:'#8f8f95'
+  };
+
+  var PRESENT = [
+    {x:1,y:5,w:14,h:4,c:'K'},
+    {x:2,y:6,w:12,h:2,c:'L'},
+    {x:2,y:9,w:12,h:7,c:'K'},
+    {x:3,y:10,w:10,h:5,c:'B'},
+    {x:3,y:14,w:10,h:1,c:'S'},
+    {x:11,y:10,w:2,h:5,c:'S'},
+    {x:2,y:10,w:12,h:1,c:'R'},
+    {x:7,y:5,w:3,h:11,c:'R'},
+    {x:9,y:5,w:1,h:11,c:'r'},
+    {x:2,y:1,w:5,h:4,c:'R'},
+    {x:2,y:4,w:5,h:1,c:'r'},
+    {x:9,y:1,w:5,h:4,c:'R'},
+    {x:9,y:4,w:5,h:1,c:'r'},
+    {x:7,y:1,w:2,h:5,c:'r'},
+    {x:7,y:1,w:1,h:2,c:'R'}
+  ];
+  var PRESENT_ORIGIN = {x:8*UNIT, y:1*UNIT};
+
+  var BLUNT = [
+    {x:1,y:6,w:12,h:4,c:'K'},
+    {x:2,y:7,w:10,h:2,c:'paper'},
+    {x:2,y:8,w:10,h:1,c:'paperShade'},
+    {x:1,y:7,w:1,h:2,c:'paperShade'},
+    {x:12,y:6,w:3,h:4,c:'K'},
+    {x:13,y:7,w:2,h:2,c:'ember'},
+    {x:13,y:7,w:1,h:1,c:'emberCore'},
+    {x:14,y:6,w:1,h:1,c:'ash'}
+  ];
+  var BLUNT_ORIGIN = {x:14*UNIT, y:6*UNIT};
+
+  function drawSprite(shapes){
+    for (var i=0;i<shapes.length;i++){
+      var s = shapes[i];
+      ctx.fillStyle = COLORS[s.c];
+      ctx.fillRect(s.x*UNIT, s.y*UNIT, s.w*UNIT, s.h*UNIT);
+    }
+  }
+
+  // ---------- particles (smoke) ----------
+  var smoke = [];
+  var spawnAcc = 0;
+
+  function spawnSmoke(origin, intensity){
+    smoke.push({
+      x: origin.x + (Math.random()-0.5)*14,
+      y: origin.y + (Math.random()-0.5)*4,
+      vx: (Math.random()-0.5)*0.35,
+      vy: -(0.35 + Math.random()*0.35 + intensity*0.55),
+      size: 3 + Math.random()*3 + intensity*5,
+      age: 0,
+      maxAge: 55 + Math.random()*35 + intensity*35,
+      alpha: 0.35 + Math.random()*0.25,
+      wobble: Math.random()*Math.PI*2
+    });
+  }
+
+  function updateAndDrawSmoke(dt){
+    var next = [];
+    for (var i=0;i<smoke.length;i++){
+      var p = smoke[i];
+      p.age += dt;
+      if (p.age >= p.maxAge) continue;
+      p.x += p.vx + Math.sin((p.age+p.wobble)*0.06)*0.4;
+      p.y += p.vy;
+      p.vy -= 0.0015;
+      p.size += 0.03;
+      var lifeRatio = p.age / p.maxAge;
+      var a = p.alpha * (1 - lifeRatio);
+      var snap = 4;
+      var sx = Math.round((p.x - p.size/2)/snap)*snap;
+      var sy = Math.round((p.y - p.size/2)/snap)*snap;
+      var sw = Math.max(4, Math.round(p.size/snap)*snap);
+      ctx.fillStyle = 'rgba(' + getComputedRGB() + ',' + Math.max(0,a).toFixed(2) + ')';
+      ctx.fillRect(sx, sy, sw, sw);
+      next.push(p);
+    }
+    smoke = next;
+  }
+
+  var _smokeRGB = null;
+  function getComputedRGB(){
+    if (!_smokeRGB){
+      var v = getComputedStyle(document.documentElement).getPropertyValue('--smoke-rgb').trim();
+      _smokeRGB = v || '201,203,214';
+    }
+    return _smokeRGB;
+  }
+
+  // ---------- confetti (celebration) ----------
+  var confetti = [];
+  var CONFETTI_COLORS = ['#ff5470','#ffd166','#7dd3c0','#eef0f6'];
+  function burstConfetti(){
+    for (var i=0;i<46;i++){
+      confetti.push({
+        x: 80 + (Math.random()-0.5)*40,
+        y: 70 + (Math.random()-0.5)*20,
+        vx: (Math.random()-0.5)*3.2,
+        vy: -2 - Math.random()*2.4,
+        size: 4 + Math.random()*4,
+        age:0,
+        maxAge: 70 + Math.random()*40,
+        color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+        rot: Math.random()*Math.PI
+      });
+    }
+  }
+  function updateAndDrawConfetti(dt){
+    var next = [];
+    for (var i=0;i<confetti.length;i++){
+      var c = confetti[i];
+      c.age += dt;
+      if (c.age >= c.maxAge) continue;
+      c.x += c.vx;
+      c.y += c.vy;
+      c.vy += 0.09;
+      var a = 1 - (c.age/c.maxAge);
+      ctx.fillStyle = c.color;
+      ctx.globalAlpha = Math.max(0,a);
+      var snap = 4;
+      var sx = Math.round((c.x - c.size/2)/snap)*snap;
+      var sy = Math.round((c.y - c.size/2)/snap)*snap;
+      ctx.fillRect(sx, sy, c.size, c.size);
+      ctx.globalAlpha = 1;
+      next.push(c);
+    }
+    confetti = next;
+  }
+
+  // ---------- state ----------
+  var unlocked = false;
+  var opened = false;
+  var spriteWrap = document.getElementById('spriteWrap');
+  var statusEl = document.getElementById('status');
+  var celebrateEl = document.getElementById('celebrate');
+  var celebrateSubEl = document.getElementById('celebrateSub');
+  var countdownEl = document.getElementById('countdown');
+
+  canvas.addEventListener('click', function(){
+    if (unlocked && !opened){
+      opened = true;
+      spriteWrap.classList.remove('unlocked');
+      burstConfetti();
+      statusEl.textContent = '';
+      celebrateEl.classList.add('show');
+      celebrateSubEl.classList.add('show');
+    }
+  });
+
+  function pad(n){ return n < 10 ? '0'+n : ''+n; }
+
+  var lastSecondShown = null;
+  function updateCountdownDOM(remainingMs){
+    var totalSeconds = Math.max(0, Math.floor(remainingMs/1000));
+    if (totalSeconds === lastSecondShown) return;
+    lastSecondShown = totalSeconds;
+    var d = Math.floor(totalSeconds/86400);
+    var h = Math.floor((totalSeconds%86400)/3600);
+    var m = Math.floor((totalSeconds%3600)/60);
+    var s = totalSeconds%60;
+    document.getElementById('dd').textContent = pad(d);
+    document.getElementById('hh').textContent = pad(h);
+    document.getElementById('mm').textContent = pad(m);
+    document.getElementById('ss').textContent = pad(s);
+  }
+
+  // ---------- main loop ----------
+  var lastTs = null;
+  function frame(ts){
+    if (lastTs === null) lastTs = ts;
+    var dt = Math.min(4, (ts - lastTs) / 16.6667); // in ~frames, capped
+    lastTs = ts;
+
+    var remaining = TARGET - Date.now();
+    var justUnlocked = (!unlocked && remaining <= 0);
+    unlocked = remaining <= 0;
+
+    if (!opened){
+      updateCountdownDOM(remaining);
+      if (unlocked){
+        countdownEl.classList.add('hide');
+        statusEl.classList.add('ready');
+        statusEl.textContent = "it's time — tap your present";
+        spriteWrap.classList.add('unlocked');
+      } else {
+        var totalSeconds = Math.max(0, Math.floor(remaining/1000));
+        if (totalSeconds < 3600){
+          statusEl.textContent = "almost there… it's really smoking now";
+        } else {
+          statusEl.textContent = 'the present is smoking a little more every hour…';
+        }
+      }
+    }
+
+    var progress = Math.max(0, Math.min(1, 1 - remaining / remainingAtLoad));
+    var intensity = opened ? 0.5 : Math.max(0.12, progress);
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    drawSprite(opened ? BLUNT : PRESENT);
+
+    var origin = opened ? BLUNT_ORIGIN : PRESENT_ORIGIN;
+    var rate = reduceMotion ? 1.2 : (1.4 + intensity*7.5); // particles per ~frame-batch
+    spawnAcc += rate * dt * 0.06;
+    while (spawnAcc >= 1){
+      spawnSmoke(origin, intensity);
+      spawnAcc -= 1;
+    }
+    updateAndDrawSmoke(dt);
+
+    if (confetti.length) updateAndDrawConfetti(dt);
+
+    requestAnimationFrame(frame);
+  }
+
+  requestAnimationFrame(frame);
+})();
+</script>
